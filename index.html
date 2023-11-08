@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+    <style>
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+        }
+    </style>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js"></script>
+    <script src="./js/leaflet.shpfile.js"></script>
+    <script src="./js/shp.js"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+</body>
+
+</html>
+
+<script>
+    var map = L.map('map');
+
+    Streets = L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXVzdGluY2FyZXkiLCJhIjoiY2thanlmdGU4MGFjeTJ5bGJqcHgzZTB3NiJ9.qkuctvbWSIpVLidV8ptKcg",
+        {
+            attribution:
+                'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            id: "mapbox/streets-v11",
+            tileSize: 512,
+            zoomOffset: -1
+        }
+    ).addTo(map);
+    map.setView([20.76226961404633, 77.99525404063556], 5)
+    const latlng = function (position) {
+        map.setView([position.coords.latitude, position.coords.longitude], 14)
+        L.marker([position.coords.latitude, position.coords.longitude]).bindPopup(`${position.coords.latitude},${position.coords.longitude}`).addTo(map).openPopup();
+    }
+    // navigator.geolocation.getCurrentPosition(latlng)
+
+    // var shpfile = new L.shapefile('./District.zip').addTo(map);
+    // var shpfile1 = new L.shapefile('./karnadaka.zip').addTo(map);
+    var adminBoundary = new L.Shapefile('./india admin.zip', {
+        onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
+                    return k + ": " + feature.properties[k];
+                }).join("<br />"), {
+                    maxHeight: 200
+                });
+            }
+        }
+    }
+    );
+    var StateBoundary = new L.Shapefile('./india_state.zip', {
+        onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
+                    return k + ": " + feature.properties[k];
+                }).join("<br />"), {
+                    maxHeight: 200
+                });
+            }
+        }
+    }
+    );
+    var districtBoundary = new L.Shapefile('./india_district.zip', {
+        onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
+                    return k + ": " + feature.properties[k];
+                }).join("<br />"), {
+                    maxHeight: 200
+                });
+            }
+        }
+    }
+    );
+    var cityBoundary = new L.Shapefile('./india_taluk.zip', {
+        onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
+                    return k + ": " + feature.properties[k];
+                }).join("<br />"), {
+                    maxHeight: 200
+                });
+            }
+        }
+    }
+    );
+
+    adminBoundary.once("data:loaded", function () {
+        console.log("finished loaded shapefile");
+    });
+    var overlays = {
+        "Administrative Boundary": adminBoundary,
+        "State Boundary": StateBoundary,
+        "District Boundary": districtBoundary,
+        "City Boundary": cityBoundary,
+    };
+    L.control.layers(null, overlays).addTo(map);
+</script>
