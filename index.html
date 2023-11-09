@@ -11,6 +11,7 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""></script>
+    <script src="https://kit.fontawesome.com/c906bf6e94.js" crossorigin="anonymous"></script>
     <style>
         #map {
             position: absolute;
@@ -19,20 +20,95 @@
             right: 0;
             left: 0;
         }
+
+        #formUpload {
+            position: absolute;
+            display: block;
+            z-index: 100000;
+            margin: 10px;
+            padding: 8px;
+            background-color: white;
+        }
+
+        #Locate {
+            position: absolute;
+            display: block;
+            z-index: 100000;
+            bottom: 50;
+            left: 100;
+            width: 30px;
+            height: 30px;
+        }
+
+        input {
+            padding: 5px;
+            margin: 2px;
+        }
+
+        table {
+            margin: 5px;
+
+        }
+
+        td {
+            align-items: start;
+        }
+
+        p {
+            color: blue;
+            font-weight: bolder;
+        }
+
+        .leaflet-popup-content-wrapper {
+            width: 400px;
+            padding: 10px;
+        }
+
+        .leaflet-popup-content,
+        .leaflet-popup-scrolled {
+            overflow-x: hidden;
+        }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js"></script>
     <script src="./js/leaflet.shpfile.js"></script>
     <script src="./js/shp.js"></script>
 </head>
 
 <body>
-    <div id="map"></div>
+    <div id="map">
+        <input id="imgInp" type="file" accept=".zip,.rar,.7zip" />
+
+    </div>
+    <form id="formUpload" action='#' onsubmit="return false;">
+        <div> <button id="Locate"><i class="fa-regular fa-building" style="color: #1f1e1e;"></i></button></div>
+        <p>Choose file and click Load</p>
+        <input class="form-control-sm" type='file' id='fileinput' accept=".zip,.rar,.7zip">
+        <input class="btn btn-sm btn-outline-dark" type='button' id='btnLoad' value='Load' onclick='loadFile();'>
+        <input class="btn btn-sm btn-outline-dark" type="button" id="reset" value="Reset">
+
+
+        <div class="form-control-sm">
+            <p>File Name: </p>
+            <ul id="output"></ul>
+
+        </div>
+    </form>
+
+
 </body>
 
 </html>
 
-<script>
-    var map = L.map('map');
+<script type="text/javascript" charset="UTF-8">
+    var map = L.map('map', {
+        layer: [],
+        zoomControl: false
+    });
 
     Streets = L.tileLayer(
         "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXVzdGluY2FyZXkiLCJhIjoiY2thanlmdGU4MGFjeTJ5bGJqcHgzZTB3NiJ9.qkuctvbWSIpVLidV8ptKcg",
@@ -44,72 +120,108 @@
             zoomOffset: -1
         }
     ).addTo(map);
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+    function haveLayer() {
+        if (map.hasLayer(shpfile) === false) {
+            console.log('Has Layer');
+        }
+        else {
+            console.log('Have not layer');
+        }
+    }
+    // haveLayer();
     map.setView([20.76226961404633, 77.99525404063556], 5)
-    const latlng = function (position) {
-        map.setView([position.coords.latitude, position.coords.longitude], 14)
-        L.marker([position.coords.latitude, position.coords.longitude]).bindPopup(`${position.coords.latitude},${position.coords.longitude}`).addTo(map).openPopup();
-    }
-    // navigator.geolocation.getCurrentPosition(latlng)
+    var scale = L.control.scale().addTo(map);
+    document.getElementById('Locate').addEventListener('click', function () {
+        map.locate({ setView: true, watch: true, maxZoom: 17 });
+        map.on('locationfound', function (e) {
+            var marker = L.marker([e.latitude, e.longitude]).bindPopup('Your are here :)');
+            var circle = L.circle([e.latitude, e.longitude], e.accuracy / 2, {
+                weight: 1,
+                color: 'blue',
+                fillColor: '#cacaca',
+                fillOpacity: 0.2
+            });
+            map.addLayer(marker);
+            map.addLayer(circle);
+        })
+            .on('locationerror', function (e) {
+                console.log(e);
+                alert("Location access denied.");
+            });
 
-    // var shpfile = new L.shapefile('./District.zip').addTo(map);
-    // var shpfile1 = new L.shapefile('./karnadaka.zip').addTo(map);
-    var adminBoundary = new L.Shapefile('./india admin.zip', {
-        onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
-                    return k + ": " + feature.properties[k];
-                }).join("<br />"), {
-                    maxHeight: 200
-                });
-            }
-        }
-    }
-    );
-    var StateBoundary = new L.Shapefile('./india_state.zip', {
-        onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
-                    return k + ": " + feature.properties[k];
-                }).join("<br />"), {
-                    maxHeight: 200
-                });
-            }
-        }
-    }
-    );
-    var districtBoundary = new L.Shapefile('./india_district.zip', {
-        onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
-                    return k + ": " + feature.properties[k];
-                }).join("<br />"), {
-                    maxHeight: 200
-                });
-            }
-        }
-    }
-    );
-    var cityBoundary = new L.Shapefile('./india_taluk.zip', {
-        onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                layer.bindPopup(Object.keys(feature.properties).map(function (k) {
-                    return k + ": " + feature.properties[k];
-                }).join("<br />"), {
-                    maxHeight: 200
-                });
-            }
-        }
-    }
-    );
 
-    adminBoundary.once("data:loaded", function () {
-        console.log("finished loaded shapefile");
+    })
+
+    const output = document.getElementById("output");
+
+    const displayName = document.getElementById("fileinput");
+    displayName.addEventListener("change", (event) => {
+        const files = event.target.files;
+        output.textContent = "";
+
+        for (const file of files) {
+            const li = document.createElement("li");
+            li.textContent = file.name;
+            output.appendChild(li);
+        }
     });
-    var overlays = {
-        "Administrative Boundary": adminBoundary,
-        "State Boundary": StateBoundary,
-        "District Boundary": districtBoundary,
-        "City Boundary": cityBoundary,
-    };
-    L.control.layers(null, overlays).addTo(map);
+    function loadFile() {
+        input = document.getElementById('fileinput');
+        if (!input.files[0]) {
+            bodyAppend("p", "Please select a file before clicking 'Load'");
+
+        }
+        else {
+            file = input.files[0];
+            fr = new FileReader();
+            fr.onload = receiveBinary;
+            fr.readAsArrayBuffer(file);
+
+        }
+
+        async function receiveBinary() {
+            try {
+
+                result = fr.result;
+                var shpfile = new L.Shapefile(result, {
+
+
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties) {
+                            layer.bindPopup(Object.keys(feature.properties).map(function (k) {
+                                // console.log(` ${k}: ${feature.properties[k]}`);
+                                var data = `<table class="table   table-sm table-responsive"><tr><td>${k}</td><td>${feature.properties[k]}</td></tr></table>`
+                                return data;
+                            }).join(""), {
+                                maxWidth: 400,
+                                maxHeight: 250
+                            });
+                        }
+                    }
+                });
+                document.getElementById('reset').addEventListener('click', () => {
+
+                    return map.removeLayer(shpfile)
+                })
+                console.log(typeof result);
+
+                shpfile.addTo(map);
+                const bound = await shpfile.extend;
+                var bounds = shpfile.getBounds().pad(0.2);
+                map.fitBounds(bounds);
+                shpfile.once("data:loaded", function () {
+                    console.log("finished loaded shapefile");
+                });
+                haveLayer();
+
+            } catch (err) {
+                console.log(err);
+            }
+
+
+        }
+    }
 </script>
