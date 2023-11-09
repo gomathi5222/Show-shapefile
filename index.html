@@ -31,10 +31,10 @@
         }
 
         #Locate {
-            position: absolute;
+            position: relative;
             display: block;
             z-index: 100000;
-            bottom: 50;
+            top: 150;
             left: 100;
             width: 30px;
             height: 30px;
@@ -85,7 +85,7 @@
 
     </div>
     <form id="formUpload" action='#' onsubmit="return false;">
-        <div> <button id="Locate"><i class="fa-regular fa-building" style="color: #1f1e1e;"></i></button></div>
+
         <p>Choose file and click Load</p>
         <input class="form-control-sm" type='file' id='fileinput' accept=".zip,.rar,.7zip">
         <input class="btn btn-sm btn-outline-dark" type='button' id='btnLoad' value='Load' onclick='loadFile();'>
@@ -134,26 +134,26 @@
     // haveLayer();
     map.setView([20.76226961404633, 77.99525404063556], 5)
     var scale = L.control.scale().addTo(map);
-    document.getElementById('Locate').addEventListener('click', function () {
-        map.locate({ setView: true, watch: true, maxZoom: 17 });
-        map.on('locationfound', function (e) {
-            var marker = L.marker([e.latitude, e.longitude]).bindPopup('Your are here :)');
-            var circle = L.circle([e.latitude, e.longitude], e.accuracy / 2, {
-                weight: 1,
-                color: 'blue',
-                fillColor: '#cacaca',
-                fillOpacity: 0.2
-            });
-            map.addLayer(marker);
-            map.addLayer(circle);
-        })
-            .on('locationerror', function (e) {
-                console.log(e);
-                alert("Location access denied.");
-            });
+    // document.getElementById('Locate').addEventListener('click', function () {
+    //     map.locate({ setView: true, watch: true, maxZoom: 17 });
+    //     map.on('locationfound', function (e) {
+    //         var marker = L.marker([e.latitude, e.longitude]).bindPopup('Your are here :)');
+    //         var circle = L.circle([e.latitude, e.longitude], e.accuracy / 2, {
+    //             weight: 1,
+    //             color: 'blue',
+    //             fillColor: '#cacaca',
+    //             fillOpacity: 0.2
+    //         });
+    //         map.addLayer(marker);
+    //         map.addLayer(circle);
+    //     })
+    //         .on('locationerror', function (e) {
+    //             console.log(e);
+    //             alert("Location access denied.");
+    //         });
 
 
-    })
+    // })
 
     const output = document.getElementById("output");
 
